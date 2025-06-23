@@ -361,30 +361,30 @@ def print_image_by_array(
     scramble: bool = True,
 ) -> None:
     """
-    Draw a NumPy array of shape (H, W, 3) or (H, W, 4) onto the canvas.
+    Render a NumPy array as an image on the PixelServer canvas.
 
     Parameters
     ----------
     client : PixelClient
-        An **open** PixelClient instance.
+        An active PixelClient connection.
     arr : np.ndarray
-        uint8 array with RGB or RGBA data.
-    top_left : (x, y)
-        Where the array’s (0, 0) pixel should be placed on the canvas.
-    scramble : bool
-        If True, shuffle the draw order (fun “loading effect”); if False,
-        paint in normal row-major order.
+        A uint8 array of shape (height, width, 3) for RGB or (height, width, 4) for RGBA.
+    top_left : tuple of int, optional
+        Coordinates (x, y) for the top-left corner where the image will be drawn.
+    scramble : bool, optional
+        If True, pixels are drawn in random order for a loading effect; if False, pixels are drawn row by row.
     """
+    # Validate input array shape
     if arr.ndim != 3 or arr.shape[2] not in (3, 4):
         raise ValueError("array must have shape (H, W, 3) or (H, W, 4)")
 
     h, w, channels = arr.shape
     xs = list(range(w))
     ys = list(range(h))
-
     off_x, off_y = top_left
 
     if not scramble:
+        # Draw pixels in row-major order
         for y in ys:
             for x in xs:
                 pixel = arr[y, x]
@@ -392,6 +392,7 @@ def print_image_by_array(
                 a = int(pixel[3]) if channels == 4 else 255
                 client.set_pixel(off_x + x, off_y + y, r, g, b, a)
     else:
+        # Draw pixels in random order for a visual effect
         scrambled_list = list(product(xs, ys))
         shuffle(scrambled_list)
         for x, y in scrambled_list:
