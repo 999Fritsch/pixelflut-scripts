@@ -5,14 +5,15 @@ from PIL import Image
 from random import randint, shuffle
 from itertools import product
 
-def voronoi_noise(size=128, n_seeds=40, metric="euclid", invert=False,
+def voronoi_noise(width=128, height=128, n_seeds=40, metric="euclid", invert=False,
                   rng=None):
     """
     Generate an RGB Voronoi-noise image.
 
     Parameters
     ----------
-    size     : int   – width & height of the square image in pixels
+    width    : int   – width of the image in pixels
+    height   : int   – height of the image in pixels
     n_seeds  : int   – feature (seed) points per colour channel
     metric   : str   – 'euclid' (d) or 'manhattan' (d₁) distance
     invert   : bool  – True makes cell centres bright, borders dark
@@ -20,19 +21,24 @@ def voronoi_noise(size=128, n_seeds=40, metric="euclid", invert=False,
 
     Returns
     -------
-    np.ndarray uint8 with shape (size, size, 3)
+    np.ndarray uint8 with shape (height, width, 3)
     """
     rng = np.random.default_rng(rng)
 
     # Pre-compute the x,y coordinates of every pixel
-    yx = np.stack(np.mgrid[:size, :size], axis=-1)          # (h, w, 2)
+    yx = np.stack(np.mgrid[:height, :width], axis=-1)  # (h, w, 2)
 
     # Function that builds one greyscale slice
     def channel_slice():
-        seeds = rng.random((n_seeds, 2)) * size
-        diff  = yx[None, ...] - seeds[:, None, None, :]
-        dist  = np.sqrt((diff ** 2).sum(-1))          # Euclidean
-        f1    = dist.min(0)
+        seeds = rng.random((n_seeds, 2))
+        seeds[:, 0] *= height
+        seeds[:, 1] *= width
+        diff = yx[None, ...] - seeds[:, None, None, :]
+        if metric == "manhattan":
+            dist = np.abs(diff).sum(-1)
+        else:
+            dist = np.sqrt((diff ** 2).sum(-1))  # Euclidean
+        f1 = dist.min(0)
 
         # normalise 0‒1, robust to NumPy ≥2.0
         f1 = (f1 - f1.min()) / (np.ptp(f1) + 1e-9)
