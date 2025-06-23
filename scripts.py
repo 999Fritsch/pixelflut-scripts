@@ -3,6 +3,7 @@ from typing import Tuple, Union
 import numpy as np
 from PIL import Image
 from random import randint, shuffle
+from itertools import product
 
 def voronoi_noise(size=128, n_seeds=40, metric="euclid", invert=False,
                   rng=None):
@@ -381,16 +382,25 @@ def print_image_by_array(
     xs = list(range(w))
     ys = list(range(h))
 
-    if scramble:
-        shuffle(xs)
-        shuffle(ys)
-
     off_x, off_y = top_left
 
-    for y in ys:
-        for x in xs:
+    if not scramble:
+        for y in ys:
+            for x in xs:
+                pixel = arr[y, x]
+                r, g, b = int(pixel[0]), int(pixel[1]), int(pixel[2])
+                a = int(pixel[3]) if channels == 4 else 255
+                client.set_pixel(off_x + x, off_y + y, r, g, b, a)
+    else:
+        scrambled_list = list(product(xs, ys))
+        shuffle(scrambled_list)
+        for x, y in scrambled_list:
             pixel = arr[y, x]
             r, g, b = int(pixel[0]), int(pixel[1]), int(pixel[2])
             a = int(pixel[3]) if channels == 4 else 255
             client.set_pixel(off_x + x, off_y + y, r, g, b, a)
+
+    
+
+
 
